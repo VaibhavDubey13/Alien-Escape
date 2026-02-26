@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Play Alien Escape — Free Online Runner Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+<!-- ══ ADSTERRA: Popunder ══ -->
+<script src="https://pl28796250.effectivegatecpm.com/be/4f/a9/be4fa92ddb9e906364fc157c56431776.js"></script>
+<!-- ══ ADSTERRA: Banner 728×90 ══ -->
+<script>atOptions={'key':'621ad4bbef3036a15c02b388c601e3ac','format':'iframe','height':90,'width':728,'params':{}};</script>
+<script src="https://www.highperformanceformat.com/621ad4bbef3036a15c02b388c601e3ac/invoke.js"></script>
+
+<style>
+:root{
+  --cyan:#00f5ff;--pink:#ff006e;--yellow:#ffbe0b;
+  --purple:#8338ec;--dark:#020010;
+  --accent:var(--cyan);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;min-height:100%;background:var(--dark);font-family:'Orbitron',monospace;color:#fff;overflow-x:hidden;}
+
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,245,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,.03) 1px,transparent 1px);
+  background-size:50px 50px;animation:gm 8s linear infinite;z-index:0;pointer-events:none;
+}
+@keyframes gm{to{background-position:50px 50px;}}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px);pointer-events:none;z-index:999;}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  background:rgba(2,0,16,.94);border-bottom:1px solid rgba(0,245,255,.18);
+  backdrop-filter:blur(12px);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;height:58px;
+}
+.nav-logo{font-size:16px;font-weight:900;color:var(--cyan);text-shadow:0 0 12px var(--cyan);text-decoration:none;letter-spacing:2px;}
+.nav-links{display:flex;gap:28px;}
+.nav-links a{font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.5);text-decoration:none;transition:.2s;}
+.nav-links a:hover,.nav-links a.active{color:var(--cyan);text-shadow:0 0 8px var(--cyan);}
+.nav-back{background:rgba(0,245,255,.08);border:1px solid rgba(0,245,255,.35);color:var(--cyan);font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;padding:7px 18px;border-radius:3px;text-decoration:none;transition:.2s;}
+.nav-back:hover{background:rgba(0,245,255,.18);}
+
+/* ── LAYOUT ── */
+.page-wrap{position:relative;z-index:10;min-height:100vh;padding-top:58px;display:flex;flex-direction:column;align-items:center;}
+
+/* ── BANNER AD ── */
+.banner-ad-wrap{
+  width:100%;background:rgba(0,0,0,.5);
+  border-bottom:1px solid rgba(0,245,255,.08);
+  padding:8px 0;text-align:center;
+}
+.ad-label{font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(255,255,255,.18);letter-spacing:2px;margin-bottom:4px;}
+
+/* ── HUD ── */
+.hud{
+  display:flex;justify-content:space-between;align-items:center;
+  width:90vw;max-width:1400px;padding:12px 24px;
+  background:rgba(0,0,0,.82);
+  border:1px solid var(--cyan);border-bottom:none;border-radius:6px 6px 0 0;
+  box-shadow:0 0 24px rgba(0,245,255,.25),inset 0 0 20px rgba(0,245,255,.04);
+  gap:16px;flex-wrap:wrap;
+}
+.htitle{
+  font-size:15px;font-weight:900;color:var(--cyan);letter-spacing:3px;
+  text-shadow:0 0 12px var(--cyan),0 0 24px var(--cyan);
+  animation:glitch 5s ease-in-out infinite;white-space:nowrap;
+}
+@keyframes glitch{
+  0%,88%,100%{text-shadow:0 0 12px var(--cyan),0 0 24px var(--cyan);transform:none}
+  90%{text-shadow:-2px 0 var(--pink),2px 0 var(--cyan);transform:skewX(-1deg)}
+  92%{text-shadow:2px 0 var(--pink),-2px 0 var(--cyan);transform:skewX(1deg)}
+}
+.hscores{display:flex;gap:28px;align-items:center;flex-wrap:wrap;}
+.sb{text-align:center;}
+.sl{font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,245,255,.55);letter-spacing:2px;margin-bottom:2px;}
+.sv{font-size:20px;font-weight:700;color:var(--yellow);text-shadow:0 0 8px var(--yellow);font-family:'Share Tech Mono',monospace;}
+.sv.level{color:var(--cyan);text-shadow:0 0 8px var(--cyan);font-size:17px;}
+.hright{display:flex;align-items:center;gap:16px;}
+.hlives{font-size:22px;white-space:nowrap;}
+
+/* ── CANVAS WRAPPER ── */
+.cw{
+  position:relative;width:90vw;max-width:1400px;
+  box-shadow:0 0 0 1px var(--cyan),0 0 35px rgba(0,245,255,.35),0 0 70px rgba(0,245,255,.12);
+}
+.cn{position:absolute;width:14px;height:14px;border-color:var(--pink);border-style:solid;z-index:2;}
+.cn.tl{top:0;left:0;border-width:2px 0 0 2px;}
+.cn.tr{top:0;right:0;border-width:2px 2px 0 0;}
+.cn.bl{bottom:0;left:0;border-width:0 0 2px 2px;}
+.cn.br{bottom:0;right:0;border-width:0 2px 2px 0;}
+canvas{display:block;image-rendering:pixelated;width:100%;height:auto;cursor:pointer;}
+
+/* ── CONTROLS BAR ── */
+.bb{
+  width:90vw;max-width:1400px;padding:9px 24px;
+  background:rgba(0,0,0,.82);
+  border:1px solid var(--cyan);border-top:1px solid rgba(0,245,255,.18);
+  border-radius:0 0 6px 6px;
+  display:flex;justify-content:center;gap:36px;flex-wrap:wrap;
+}
+.kh{font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(0,245,255,.5);letter-spacing:1px;}
+.kh kbd{background:rgba(0,245,255,.1);border:1px solid rgba(0,245,255,.4);padding:2px 7px;border-radius:3px;color:var(--cyan);font-family:inherit;font-size:11px;}
+
+/* ── GAME SECTION ── */
+.game-section{width:100%;display:flex;flex-direction:column;align-items:center;padding:20px 20px 0;}
+
+/* ── LEVEL PROGRESS BAR ── */
+.level-bar-wrap{
+  width:90vw;max-width:1400px;
+  background:rgba(0,0,0,.5);border:1px solid rgba(0,245,255,.15);
+  border-top:none;padding:6px 24px 8px;
+  display:flex;align-items:center;gap:12px;
+}
+.lp-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,245,255,.4);letter-spacing:2px;white-space:nowrap;}
+.lp-track{flex:1;height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;}
+.lp-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--pink));border-radius:2px;transition:width .5s ease;width:0%;}
+.lp-next{font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(255,255,255,.3);letter-spacing:1px;white-space:nowrap;}
+
+/* ── NATIVE AD ── */
+.native-ad-wrap{
+  width:90vw;max-width:1400px;margin:16px auto;
+  background:rgba(0,0,0,.3);border:1px solid rgba(0,245,255,.08);
+  border-radius:8px;padding:10px 16px;overflow:hidden;
+}
+
+/* ── BOTTOM AD ── */
+.bottom-ad{width:100%;padding:12px 0;text-align:center;background:rgba(0,0,0,.5);border-top:1px solid rgba(255,0,110,.12);margin-top:auto;}
+
+/* ══════════════════════════════════════
+   EXTRA LIFE OVERLAY
+══════════════════════════════════════ */
+#adOverlay{
+  position:fixed;inset:0;z-index:9000;
+  background:rgba(2,0,16,.97);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;
+  transition:opacity .4s;backdrop-filter:blur(14px);
+}
+#adOverlay.visible{opacity:1;pointer-events:all;}
+
+.ad-overlay-inner{
+  width:min(92vw,660px);
+  background:rgba(0,5,25,.9);
+  border:1px solid rgba(0,245,255,.2);
+  border-radius:20px;padding:52px 44px 40px;
+  text-align:center;position:relative;
+  box-shadow:0 0 100px rgba(0,245,255,.08);
+}
+.ad-overlay-inner::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:50%;height:2px;
+  background:linear-gradient(90deg,transparent,var(--pink),transparent);
+}
+
+.ad-die-icon{font-size:58px;margin-bottom:14px;display:block;animation:shake .5s ease-in-out;}
+@keyframes shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+
+#adTitle{font-size:36px;font-weight:900;letter-spacing:4px;color:#ff3333;text-shadow:0 0 30px #ff0000;margin-bottom:8px;}
+#adBody{font-family:'Share Tech Mono',monospace;font-size:13px;color:rgba(255,255,255,.5);letter-spacing:1px;margin-bottom:32px;line-height:1.8;}
+
+.extra-life-box{
+  background:linear-gradient(135deg,rgba(0,245,255,.05),rgba(131,56,236,.05));
+  border:1px solid rgba(0,245,255,.18);border-radius:12px;
+  padding:22px 28px;margin-bottom:22px;
+}
+.elb-reward{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:16px;}
+.elb-icon{font-size:40px;}
+.elb-title{font-size:17px;font-weight:700;color:var(--cyan);letter-spacing:2px;text-shadow:0 0 10px var(--cyan);margin-bottom:3px;}
+.elb-sub{font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(255,255,255,.4);letter-spacing:1px;}
+
+#extraLifeBtn{
+  width:100%;padding:17px 24px;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  color:#000;font-family:'Orbitron',monospace;font-size:14px;
+  font-weight:900;letter-spacing:2px;border:none;
+  border-radius:10px;cursor:pointer;
+  box-shadow:0 0 30px rgba(0,245,255,.35);transition:all .25s;
+}
+#extraLifeBtn:hover{transform:translateY(-2px);box-shadow:0 6px 40px rgba(0,245,255,.55);}
+
+.skip-row{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:22px;}
+#adCountdown{font-family:'Share Tech Mono',monospace;font-size:26px;color:var(--yellow);text-shadow:0 0 10px var(--yellow);min-width:36px;text-align:center;}
+#adSkipBtn{
+  padding:11px 30px;background:transparent;
+  border:1px solid rgba(255,255,255,.18);border-radius:6px;
+  color:rgba(255,255,255,.4);font-family:'Orbitron',monospace;
+  font-size:10px;letter-spacing:2px;cursor:pointer;transition:.2s;
+}
+#adSkipBtn:not(:disabled):hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,245,255,.07);}
+#adSkipBtn:disabled{cursor:not-allowed;opacity:.3;}
+
+.continues-row{margin-top:18px;font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(255,255,255,.28);letter-spacing:1px;}
+.continues-row span{color:var(--yellow);}
+
+/* ── MUSIC MUTE ── */
+.mute-btn{
+  position:fixed;bottom:20px;right:20px;z-index:600;
+  background:rgba(0,0,0,.65);border:1px solid rgba(0,245,255,.3);
+  color:var(--cyan);font-size:20px;width:46px;height:46px;
+  border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:.2s;backdrop-filter:blur(6px);
+}
+.mute-btn:hover{background:rgba(0,245,255,.1);border-color:var(--cyan);}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">👾 ALIEN ESCAPE</a>
+  <div class="nav-links">
+    <a href="index.html">HOME</a>
+    <a href="play.html" class="active">PLAY</a>
+    <a href="leaderboard.html">LEADERBOARD</a>
+    <a href="about.html">ABOUT</a>
+  </div>
+  <a href="index.html" class="nav-back">← HOME</a>
+</nav>
+
+<!-- ══ EXTRA LIFE OVERLAY ══ -->
+<div id="adOverlay">
+  <div class="ad-overlay-inner">
+    <span class="ad-die-icon">💀</span>
+    <div id="adTitle">MISSION FAILED</div>
+    <div id="adBody">Watch a short ad and get an extra life to continue your escape!</div>
+
+    <div class="extra-life-box" id="extraLifeBox">
+      <div class="elb-reward">
+        <span class="elb-icon">❤️</span>
+        <div>
+          <div class="elb-title">+1 EXTRA LIFE</div>
+          <div class="elb-sub">Continue your run from where you stopped</div>
+        </div>
+      </div>
+      <button id="extraLifeBtn" onclick="window.adWatchAndContinue()">
+        ▶ WATCH AD &amp; CONTINUE
+      </button>
+    </div>
+
+    <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(255,255,255,.2);letter-spacing:2px;margin-bottom:14px;">
+      ADVERTISEMENT · SUPPORTS FREE GAMEPLAY
+    </div>
+
+    <div class="skip-row">
+      <span id="adCountdown">5</span>
+      <button id="adSkipBtn" onclick="window.adSkipAndContinue()" disabled>SKIP IN 5s</button>
+    </div>
+    <div class="continues-row">EXTRA LIVES AVAILABLE: <span id="continuesLeft">2</span> / 2</div>
+  </div>
+</div>
+
+<!-- PAGE CONTENT -->
+<div class="page-wrap">
+
+  <!-- TOP 728×90 BANNER -->
+  <div class="banner-ad-wrap">
+    <div class="ad-label">ADVERTISEMENT</div>
+    <a href="https://www.effectivegatecpm.com/rx743m2jk?key=8b4bc3b6c51f69ca62183cec03cd5133"
+       target="_blank" rel="noopener"
+       style="display:inline-flex;align-items:center;justify-content:center;width:728px;max-width:90vw;height:90px;background:linear-gradient(135deg,rgba(255,0,110,.1),rgba(131,56,236,.1));border:1px solid rgba(255,0,110,.2);color:var(--pink);font-family:'Orbitron',monospace;font-size:12px;letter-spacing:2px;text-decoration:none;border-radius:4px;">
+      ⚡ SPONSORED — CLICK TO EXPLORE ⚡
+    </a>
+  </div>
+
+  <!-- GAME SECTION -->
+  <div class="game-section">
+
+    <!-- HUD -->
+    <div class="hud">
+      <div class="htitle">👾 ALIEN ESCAPE</div>
+      <div class="hscores">
+        <div class="sb"><div class="sl">SCORE</div><div class="sv" id="sScore">000000</div></div>
+        <div class="sb"><div class="sl">BEST</div><div class="sv" id="sBest">000000</div></div>
+        <div class="sb"><div class="sl">CRYSTALS</div><div class="sv" id="sGems">00</div></div>
+        <div class="sb"><div class="sl">LEVEL</div><div class="sv level" id="sLevel">LVL 1</div></div>
+      </div>
+      <div class="hright">
+        <div class="hlives" id="sLives">❤️❤️❤️</div>
+      </div>
+    </div>
+
+    <!-- CANVAS -->
+    <div class="cw">
+      <div class="cn tl"></div><div class="cn tr"></div>
+      <div class="cn bl"></div><div class="cn br"></div>
+      <canvas id="c" width="1400" height="420"></canvas>
+    </div>
+
+    <!-- LEVEL PROGRESS BAR -->
+    <div class="level-bar-wrap">
+      <div class="lp-label" id="lpLabel">LVL 1 · MARS WASTELAND</div>
+      <div class="lp-track"><div class="lp-fill" id="lpFill"></div></div>
+      <div class="lp-next" id="lpNext">NEXT: 2,000</div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="bb">
+      <span class="kh"><kbd>SPACE</kbd> / <kbd>↑</kbd> — Jump &amp; Double Jump</span>
+      <span class="kh"><kbd>↓</kbd> — Slide Under Aliens</span>
+      <span class="kh">CLICK / TAP to jump</span>
+    </div>
+
+  </div><!-- /game-section -->
+
+  <!-- NATIVE AD -->
+  <div class="native-ad-wrap">
+    <div class="ad-label" style="margin-bottom:8px;">SPONSORED</div>
+    <script async="async" data-cfasync="false" src="https://pl28796232.effectivegatecpm.com/0732a049df85045c5072988b81b63963/invoke.js"></script>
+    <div id="container-0732a049df85045c5072988b81b63963"></div>
+  </div>
+
+  <!-- BOTTOM AD -->
+  <div class="bottom-ad">
+    <div class="ad-label">ADVERTISEMENT</div>
+    <a href="https://www.effectivegatecpm.com/rx743m2jk?key=8b4bc3b6c51f69ca62183cec03cd5133"
+       target="_blank" rel="noopener"
+       style="display:inline-block;padding:12px 52px;background:linear-gradient(135deg,var(--pink),var(--purple));color:#fff;font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;text-decoration:none;border-radius:4px;box-shadow:0 0 20px rgba(255,0,110,.3);">
+      ⚡ CLICK TO SUPPORT ALIEN ESCAPE ⚡
+    </a>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<!-- MUTE BUTTON -->
+<button class="mute-btn" id="muteBtn" title="Toggle music">🔊</button>
+
+<script src="game.js"></script>
+<script>
+// ── Level progress bar updater ──
+const LEVEL_BOUNDS = [0,2000,5000,10000,20000,35000,55000,80000,110000,150000];
+const LEVEL_NAMES = [
+  'MARS WASTELAND','ICE PLANET CRYON','LAVA WORLD INFEX','NEON CYBER NEXUS',
+  'JUNGLE MOON VEXA','STORM PLANET ZRIX','DESERT TWIN SUNS','OCEAN PLANET THAL',
+  'CRYSTAL WORLD XAL','VOID REALM OMEGA'
+];
+
+function updateLevelBar(){
+  const scoreEl = document.getElementById('sScore');
+  const score = scoreEl ? parseInt(scoreEl.textContent)||0 : 0;
+
+  // Find current level
+  let lvl=0;
+  for(let i=LEVEL_BOUNDS.length-1;i>=0;i--){if(score>=LEVEL_BOUNDS[i]){lvl=i;break;}}
+
+  const fill = document.getElementById('lpFill');
+  const label = document.getElementById('lpLabel');
+  const next  = document.getElementById('lpNext');
+
+  const from=LEVEL_BOUNDS[lvl], to=LEVEL_BOUNDS[lvl+1]||LEVEL_BOUNDS[lvl]*1.5;
+  const pct=Math.min(100,((score-from)/(to-from))*100);
+
+  if(fill)  fill.style.width=pct+'%';
+  if(label) label.textContent=`LVL ${lvl+1} · ${LEVEL_NAMES[lvl]||'VOID REALM'}`;
+  if(next)  next.textContent=lvl<LEVEL_BOUNDS.length-1
+    ?`NEXT: ${to.toLocaleString()}`:'MAX LEVEL';
+}
+setInterval(updateLevelBar, 200);
+
+// ── Mute button ──
+let muted=false;
+document.getElementById('muteBtn').addEventListener('click',function(){
+  muted=!muted;
+  this.textContent=muted?'🔇':'🔊';
+  try{
+    if(window._bgGainNode)  window._bgGainNode.gain.value  = muted?0:0.15;
+    if(window._sfxGainNode) window._sfxGainNode.gain.value = muted?0:0.5;
+  }catch(e){}
+});
+</script>
+</body>
+</html>
