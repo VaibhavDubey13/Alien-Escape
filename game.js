@@ -220,6 +220,41 @@ const ALIEN_SETS = [
 ];
 
 // ══════════════════════════════════
+//  SKIN DEFINITIONS
+// ══════════════════════════════════
+const SKINS = [
+  { id:'commander', name:'COMMANDER', free:true,
+    body:'#2a2a3a', chest:'#1a3a4a', helmet:'#1a1a2a',
+    visor1:'rgba(100,220,255,.75)', visor2:'rgba(0,100,180,.45)',
+    trim:'#00f5ff', glow:'rgba(0,245,255,.5)', boots:'#00f5ff',
+    light:'#00f5ff', trail:'#00f5ff' },
+  { id:'ranger', name:'RANGER', free:false,
+    body:'#1e2d14', chest:'#162410', helmet:'#0e1a0a',
+    visor1:'rgba(200,230,80,.75)', visor2:'rgba(80,130,0,.45)',
+    trim:'#aaff00', glow:'rgba(170,255,0,.5)', boots:'#aaff00',
+    light:'#ffcc00', trail:'#aaff00' },
+  { id:'phantom', name:'PHANTOM', free:false,
+    body:'#1a0a30', chest:'#120820', helmet:'#0d0518',
+    visor1:'rgba(180,100,255,.75)', visor2:'rgba(80,0,180,.45)',
+    trim:'#cc44ff', glow:'rgba(180,50,255,.55)', boots:'#cc44ff',
+    light:'#ff44ff', trail:'#cc44ff' },
+  { id:'inferno', name:'INFERNO', free:false,
+    body:'#2d0a00', chest:'#3d1000', helmet:'#1a0500',
+    visor1:'rgba(255,140,50,.75)', visor2:'rgba(200,40,0,.45)',
+    trim:'#ff6600', glow:'rgba(255,80,0,.55)', boots:'#ff4400',
+    light:'#ffaa00', trail:'#ff6600' },
+];
+
+function getActiveSkin(){
+  const hasPremium=localStorage.getItem('ae_premium')==='true';
+  const saved=localStorage.getItem('ae_skin')||'commander';
+  const skin=SKINS.find(s=>s.id===saved)||SKINS[0];
+  if(!skin.free&&!hasPremium) return SKINS[0];
+  return skin;
+}
+window.SKINS=SKINS;
+
+// ══════════════════════════════════
 //  GAME ENGINE
 // ══════════════════════════════════
 function init(){
@@ -228,13 +263,16 @@ function init(){
   const cx=cv.getContext('2d');
   const W=1400, H=420, GY=H-60;
   const GRAV=0.72, J1=-17, J2=-14;
-  const HW=28, HH=52, DH=28; // human width/height/duckHeight
+  const HW=28, HH=52, DH=28;
 
   let ST='idle';
   let score=0,best=0,crystals=0,lives=3,speed=6,tick=0,gx=0;
   let levelIdx=0, levelFlash=0, prevLevelIdx=0;
+  let levelsCleared=0, levelAdPending=false, levelAdShown=false;
   let extraLifeUsed=0;
-  const MAX_EXTRA=2;
+  const hasPremium=localStorage.getItem('ae_premium')==='true';
+  const MAX_EXTRA=hasPremium?4:2;
+  let startLives=hasPremium?5:3;
   let adShown=false;
 
   // Human runner
@@ -259,6 +297,34 @@ function init(){
     if(elLives) elLives.textContent='❤️'.repeat(Math.max(0,lives));
     if(elLevel) elLevel.textContent=`LVL ${levelIdx+1}`;
   }
+
+  // ── Level-cleared interstitial ad (every 2 levels, non-premium) ──
+  function showLevelAd(){
+    const ov=document.getElementById('levelAdOverlay');
+    if(!ov) return;
+    adShown=true;
+    ov.classList.add('visible');
+    const L=LEVELS[levelIdx];
+    const nameEl=ov.querySelector('.lad-level');
+    if(nameEl) nameEl.textContent=`LEVEL ${levelIdx+1}: ${L.name}`;
+    let secs=4;
+    const skipBtn=ov.querySelector('.lad-skip');
+    const cnt=ov.querySelector('.lad-countdown');
+    if(skipBtn) skipBtn.disabled=true;
+    if(cnt) cnt.textContent=secs;
+    const iv=setInterval(()=>{
+      secs--;
+      if(cnt) cnt.textContent=secs;
+      if(secs<=0){clearInterval(iv);if(skipBtn){skipBtn.disabled=false;skipBtn.textContent='CONTINUE ▶';}}
+    },1000);
+  }
+  window.closeLevelAd=function(){
+    const ov=document.getElementById('levelAdOverlay');
+    if(ov) ov.classList.remove('visible');
+    adShown=false;levelAdPending=false;
+    const btn=ov&&ov.querySelector('.lad-skip');
+    if(btn){btn.disabled=true;btn.textContent='LOADING...';}
+  };
 
   // ── Extra Life Ad ──
   function showExtraLifeAd(isGameOver){
@@ -348,8 +414,11 @@ function init(){
 
   // ── Game flow ──
   function startGame(){
-    ST='running';score=0;crystals=0;lives=3;speed=6;tick=0;gx=0;
+    ST='running';score=0;crystals=0;
+    lives=hasPremium?5:3;
+    speed=6;tick=0;gx=0;
     extraLifeUsed=0;levelIdx=0;prevLevelIdx=0;levelFlash=0;
+    levelsCleared=0;levelAdPending=false;levelAdShown=false;
     aliens=[];crystalPkgs=[];obTick=0;obNext=90;crTick=0;
     H_.y=GY-HH;H_.vy=0;H_.onG=true;H_.duck=false;H_.dbl=false;H_.inv=0;H_.pts=[];H_.trail=[];
     initBg(0);updateHUD();startBgMusic();
@@ -442,9 +511,17 @@ function init(){
     if(newIdx!==levelIdx){
       levelIdx=newIdx;levelFlash=120;
       initBg(levelIdx);sndLevelUp();
-      // Recalculate speed for new level
+      levelsCleared++;
+      // Show interstitial ad every 2 levels (non-premium only)
+      if(!hasPremium && levelsCleared%2===0){
+        levelAdPending=true;
+        setTimeout(()=>showLevelAd(),600);
+      }
     }
     if(levelFlash>0)levelFlash--;
+
+    // Pause for level ad
+    if(levelAdPending)return;
 
     // Speed: base 6 + level bonus + gradual increase within level
     const levelBonus=levelIdx*0.8;
@@ -957,41 +1034,40 @@ function init(){
   }
 
   function drawHumanFull(x,y,af,onG,L){
-    const suit=L.accent; // spacesuit tinted by level
+    const SK=getActiveSkin();
     // === HELMET ===
-    cx.fillStyle='#1a1a2a';cx.shadowBlur=0;
+    cx.fillStyle=SK.helmet; cx.shadowBlur=0;
     cx.beginPath();cx.arc(x+HW/2,y+8,12,0,Math.PI*2);cx.fill();
     // Visor
     const visorGrad=cx.createRadialGradient(x+HW/2,y+7,2,x+HW/2,y+8,10);
-    visorGrad.addColorStop(0,'rgba(100,220,255,.7)');visorGrad.addColorStop(1,'rgba(0,100,180,.4)');
+    visorGrad.addColorStop(0,SK.visor1);visorGrad.addColorStop(1,SK.visor2);
     cx.fillStyle=visorGrad;cx.beginPath();cx.ellipse(x+HW/2,y+8,8,6,0,0,Math.PI*2);cx.fill();
     // Helmet rim
-    cx.strokeStyle=suit;cx.lineWidth=1.5;cx.shadowColor=suit;cx.shadowBlur=6;
+    cx.strokeStyle=SK.trim;cx.lineWidth=1.5;cx.shadowColor=SK.glow;cx.shadowBlur=8;
     cx.beginPath();cx.arc(x+HW/2,y+8,12,0,Math.PI*2);cx.stroke();
     cx.shadowBlur=0;
 
     // === BODY / SPACESUIT ===
-    cx.fillStyle='#2a2a3a';cx.fillRect(x+5,y+18,18,16);
+    cx.fillStyle=SK.body;cx.fillRect(x+5,y+18,18,16);
     // Chest pack
-    cx.fillStyle='#1a3a4a';cx.fillRect(x+7,y+20,14,10);
-    cx.strokeStyle=suit;cx.lineWidth=1.5;cx.shadowColor=suit;cx.shadowBlur=4;
+    cx.fillStyle=SK.chest;cx.fillRect(x+7,y+20,14,10);
+    cx.strokeStyle=SK.trim;cx.lineWidth=1.5;cx.shadowColor=SK.glow;cx.shadowBlur=5;
     cx.strokeRect(x+7,y+20,14,10);
     // Blinking status light
     const blinkOn=Math.floor(tick/15)%2===0;
-    cx.fillStyle=blinkOn?suit:'#1a3a4a';cx.beginPath();cx.arc(x+14,y+25,2.5,0,Math.PI*2);cx.fill();
+    cx.fillStyle=blinkOn?SK.light:SK.chest;cx.beginPath();cx.arc(x+14,y+25,2.5,0,Math.PI*2);cx.fill();
     cx.shadowBlur=0;
 
     // === ARMS ===
-    cx.fillStyle='#2a2a3a';
+    cx.fillStyle=SK.body;
     if(onG){
-      // Running arm swing
       const af2=af%4;
       const swingL=af2<2?-6:4, swingR=af2<2?4:-6;
       cx.fillRect(x+1,y+18+swingL,5,12);cx.fillRect(x+22,y+18+swingR,5,12);
-      cx.fillStyle='#3a4a4a';cx.fillRect(x,y+28+swingL,6,5);cx.fillRect(x+22,y+28+swingR,6,5);
+      cx.fillStyle=SK.chest;cx.fillRect(x,y+28+swingL,6,5);cx.fillRect(x+22,y+28+swingR,6,5);
     } else {
       cx.fillRect(x-1,y+18,5,12);cx.fillRect(x+24,y+18,5,12);
-      cx.fillStyle='#3a4a4a';cx.fillRect(x-2,y+29,6,5);cx.fillRect(x+24,y+29,6,5);
+      cx.fillStyle=SK.chest;cx.fillRect(x-2,y+29,6,5);cx.fillRect(x+24,y+29,6,5);
     }
 
     // === LEGS ===
@@ -1000,46 +1076,44 @@ function init(){
       const lp=[[0,0],[4,3],[2,0],[-2,3]];
       const[la,lb]=lp[af%4];
       cx.fillRect(x+5,y+34+la,7,14);cx.fillRect(x+16,y+34+lb,7,14);
-      // Boots
-      cx.fillStyle=suit;cx.shadowColor=suit;cx.shadowBlur=3;
+      cx.fillStyle=SK.boots;cx.shadowColor=SK.glow;cx.shadowBlur=4;
       if(af%4===1){cx.fillRect(x+3,y+46+la,9,5);cx.fillRect(x+14,y+45+lb,10,5);}
       else if(af%4===3){cx.fillRect(x+4,y+46+la,9,5);cx.fillRect(x+15,y+46+lb,9,5);}
       else{cx.fillRect(x+4,y+46+la,9,5);cx.fillRect(x+14,y+46+lb,10,5);}
     } else {
-      // Tuck legs
       cx.fillRect(x+5,y+34,7,12);cx.fillRect(x+16,y+34,7,12);
-      cx.fillStyle=suit;cx.shadowColor=suit;cx.shadowBlur=3;
+      cx.fillStyle=SK.boots;cx.shadowColor=SK.glow;cx.shadowBlur=4;
       cx.fillRect(x+3,y+44,9,5);cx.fillRect(x+16,y+44,9,5);
     }
-    // Boot glow line
-    cx.fillStyle=suit;cx.fillRect(x+3,y+46,10,1.5);cx.fillRect(x+14,y+46,10,1.5);
+    cx.fillStyle=SK.trim;cx.fillRect(x+3,y+46,10,1.5);cx.fillRect(x+14,y+46,10,1.5);
     cx.shadowBlur=0;
 
     // Jetpack exhaust when jumping
     if(!onG){
-      cx.fillStyle=suit+'88';
+      cx.globalAlpha=0.5+Math.random()*.3;
+      cx.fillStyle=SK.boots;
       for(let i=0;i<3;i++){
-        cx.beginPath();
-        cx.arc(x+8+i*6,y+34,2+Math.random()*2,0,Math.PI*2);cx.fill();
+        const ps=2+Math.random()*3;
+        cx.beginPath();cx.arc(x+7+i*7,y+34+Math.random()*4,ps,0,Math.PI*2);cx.fill();
       }
+      cx.globalAlpha=1;
     }
   }
 
   function drawHumanDuck(x,y){
-    const L=LEVELS[levelIdx],suit=L.accent;
-    // Helmet
-    cx.fillStyle='#1a1a2a';cx.beginPath();cx.arc(x+HW/2,y+5,10,0,Math.PI*2);cx.fill();
+    const SK=getActiveSkin();
+    cx.fillStyle=SK.helmet;cx.beginPath();cx.arc(x+HW/2,y+5,10,0,Math.PI*2);cx.fill();
     const vg=cx.createRadialGradient(x+HW/2,y+5,2,x+HW/2,y+5,9);
-    vg.addColorStop(0,'rgba(100,220,255,.7)');vg.addColorStop(1,'rgba(0,100,180,.4)');
+    vg.addColorStop(0,SK.visor1);vg.addColorStop(1,SK.visor2);
     cx.fillStyle=vg;cx.beginPath();cx.ellipse(x+HW/2,y+5,6,5,0,0,Math.PI*2);cx.fill();
-    cx.strokeStyle=suit;cx.lineWidth=1.5;cx.beginPath();cx.arc(x+HW/2,y+5,10,0,Math.PI*2);cx.stroke();
-    // Crouched body
-    cx.fillStyle='#2a2a3a';cx.fillRect(x+3,y+14,22,12);
-    cx.fillStyle='#1a3a4a';cx.fillRect(x+7,y+16,12,8);
-    cx.strokeStyle=suit;cx.lineWidth=1.5;cx.strokeRect(x+7,y+16,12,8);
-    // Legs spread
+    cx.strokeStyle=SK.trim;cx.lineWidth=1.5;cx.shadowColor=SK.glow;cx.shadowBlur=5;
+    cx.beginPath();cx.arc(x+HW/2,y+5,10,0,Math.PI*2);cx.stroke();
+    cx.shadowBlur=0;
+    cx.fillStyle=SK.body;cx.fillRect(x+3,y+14,22,12);
+    cx.fillStyle=SK.chest;cx.fillRect(x+7,y+16,12,8);
+    cx.strokeStyle=SK.trim;cx.lineWidth=1.5;cx.strokeRect(x+7,y+16,12,8);
     cx.fillStyle='#1e1e2e';cx.fillRect(x+2,y+22,24,6);
-    cx.fillStyle=suit;cx.fillRect(x+2,y+26,24,4);
+    cx.fillStyle=SK.boots;cx.shadowColor=SK.glow;cx.shadowBlur=4;cx.fillRect(x+2,y+26,24,4);cx.shadowBlur=0;
   }
 
   // ══════════════════════════════════
@@ -1069,7 +1143,8 @@ function init(){
   }
 
   function drawTrail(L){
-    H_.trail.forEach(t=>{cx.globalAlpha=(t.l/8)*.2;cx.fillStyle=L.accent;cx.shadowBlur=4;const s=(t.l/8)*8;cx.fillRect(t.x-s/2,t.y-s/2,s,s);});
+    const SK=getActiveSkin();
+    H_.trail.forEach(t=>{cx.globalAlpha=(t.l/8)*.2;cx.fillStyle=SK.trail;cx.shadowBlur=4;const s=(t.l/8)*8;cx.fillRect(t.x-s/2,t.y-s/2,s,s);});
     cx.globalAlpha=1;cx.shadowBlur=0;
   }
   function drawParticles(){
